@@ -45,6 +45,10 @@ internal class AppServiceHubImpl<T : SerializeAsToken>(private val serviceHub: S
                         observer.onServiceLifecycleEvent(ServiceLifecycleEvent.STATE_MACHINE_STARTED)
                         reportSuccess(nodeLifecycleEvent)
                     }
+                    is NodeLifecycleEvent.StateMachineStarting<*> -> Try.on {
+                        observer.onServiceLifecycleEvent(ServiceLifecycleEvent.STATE_MACHINE_STARTING)
+                        reportSuccess(nodeLifecycleEvent)
+                    }
                     else -> super.update(nodeLifecycleEvent)
                 }
             }

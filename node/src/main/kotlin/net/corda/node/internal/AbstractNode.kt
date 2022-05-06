@@ -53,6 +53,7 @@ import net.corda.core.node.ServiceHub
 import net.corda.core.node.ServicesForResolution
 import net.corda.core.node.services.ContractUpgradeService
 import net.corda.core.node.services.CordaService
+import net.corda.core.node.services.CordaServicePOC
 import net.corda.core.node.services.IdentityService
 import net.corda.core.node.services.KeyManagementService
 import net.corda.core.node.services.TransactionVerifierService
@@ -634,6 +635,7 @@ abstract class AbstractNode<S>(val configuration: NodeConfiguration,
             tokenizableServices = null
 
             verifyCheckpointsCompatible(frozenTokenizableServices)
+            nodeLifecycleEventsDistributor.distributeEvent(NodeLifecycleEvent.StateMachineStarting(nodeServicesContext)).get()
             val callback = smm.start(frozenTokenizableServices)
             val smmStartedFuture = rootFuture.map { callback() }
             // Shut down the SMM so no Fibers are scheduled.
@@ -938,8 +940,8 @@ abstract class AbstractNode<S>(val configuration: NodeConfiguration,
     fun <T : SerializeAsToken> installCordaService(serviceClass: Class<T>): T {
         serviceClass.requireAnnotation<CordaService>()
 
+        val serviceContext = AppServiceHubImpl<T>(services, flowStarter, transactionSupport, nodeLifecycleEventsDistributor)
         val service = try {
-            val serviceContext = AppServiceHubImpl<T>(services, flowStarter, transactionSupport, nodeLifecycleEventsDistributor)
             val extendedServiceConstructor = serviceClass.getDeclaredConstructor(AppServiceHub::class.java).apply { isAccessible = true }
             val service = extendedServiceConstructor.newInstance(serviceContext)
             serviceContext.serviceInstance = service
@@ -954,6 +956,10 @@ abstract class AbstractNode<S>(val configuration: NodeConfiguration,
         }
 
         cordappServices.putInstance(serviceClass, service)
+
+        if (service is CordaServicePOC) {
+            serviceContext.register(service.servicePriority, service)
+        }
 
         service.tokenize()
         log.info("Installed ${serviceClass.name} Corda service")

@@ -1,5 +1,6 @@
 package net.corda.core.node.services
 
+import net.corda.core.node.AppServiceHub
 import net.corda.core.node.ServiceHub
 import net.corda.core.serialization.SerializeAsToken
 import net.corda.core.serialization.SingletonSerializeAsToken
@@ -20,3 +21,9 @@ import kotlin.annotation.AnnotationTarget.CLASS
 // the need for the service type (which can be exposed by a simple getter)
 @Target(CLASS)
 annotation class CordaService
+
+@CordaService
+abstract class CordaServicePOC() : SingletonSerializeAsToken(), ServiceLifecycleObserver {
+
+    open val servicePriority = AppServiceHub.SERVICE_PRIORITY_NORMAL
+}

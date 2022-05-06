@@ -25,6 +25,7 @@ enum class ServiceLifecycleEvent {
      * sense for Corda node to continue its operation. The lifecycle events dispatcher will endeavor to terminate node's JVM as soon
      * as practically possible.
      */
+    STATE_MACHINE_STARTING,
     STATE_MACHINE_STARTED,
 }
 
