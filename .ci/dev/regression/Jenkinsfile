@@ -82,6 +82,8 @@ pipeline {
         CORDA_ARTIFACTORY_USERNAME = "${env.ARTIFACTORY_CREDENTIALS_USR}"
         DOCKER_URL = "https://index.docker.io/v1/"
         EMAIL_RECIPIENTS = credentials('corda4-email-recipient')
+        SNYK_API_KEY = "r3-c4-os-snyk"
+        SNYK_COMMANDS = "--all-sub-projects --prune-repeated-subdependencies --target-reference='${env.BRANCH_NAME}' --project-tags=Branch='${env.BRANCH_NAME.replaceAll("[^0-9|a-z|A-Z]+","_")}'"
     }
 
     stages {
@@ -102,6 +104,15 @@ pipeline {
             }
             steps {
                 stash name: 'compiled', useDefaultExcludes: false
+            }
+        }
+
+        stage('Snyk Security') {
+            when {
+                expression { isReleaseBranch }
+            }
+            steps {
+                snykSecurityScan("${env.SNYK_API_KEY}", "${env.SNYK_COMMANDS}" )
             }
         }
         stage('Sonatype Check') {
